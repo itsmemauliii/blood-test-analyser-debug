@@ -5,10 +5,8 @@ load_dotenv()
 from crewai import Agent
 from langchain_openai import ChatOpenAI
 
-# Initialize LLM
 llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.7)
 
-# Creating an Experienced Doctor agent
 doctor = Agent(
     role="Senior Doctor",
     goal="Provide accurate medical advice based on blood test reports and patient queries",
@@ -25,7 +23,6 @@ doctor = Agent(
     allow_delegation=True
 )
 
-# Creating a verifier agent
 verifier = Agent(
     role="Medical Report Verifier",
     goal="Verify the accuracy and validity of medical reports",
