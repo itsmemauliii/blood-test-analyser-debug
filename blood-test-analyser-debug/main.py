@@ -1,92 +1,89 @@
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Depends
+from fastapi.responses import JSONResponse
+from typing import Optional
 import os
 import uuid
-import asyncio
-from typing import Optional
-
-from crewai import Crew, Process
-from agents import doctor, verifier, nutritionist, exercise_specialist
-from tasks import help_patients, nutrition_analysis, exercise_planning, verification
+from celery.result import AsyncResult
+from database import get_db, AnalysisResult
+from celery_worker import analyze_report_task
+from sqlalchemy.orm import Session
+import json
 
 app = FastAPI(
     title="Blood Test Report Analyzer",
-    description="API for analyzing blood test reports and providing health recommendations",
-    version="1.0.0"
+    description="API for analyzing blood test reports with queue and database",
+    version="2.0.0"
 )
-
-def run_crew(query: str, file_path: str):
-    """Run the crew with all agents to analyze the blood report"""
-    medical_crew = Crew(
-        agents=[doctor, verifier, nutritionist, exercise_specialist],
-        tasks=[
-            help_patients,
-            nutrition_analysis,
-            exercise_planning,
-            verification
-        ],
-        process=Process.sequential,
-        verbose=2
-    )
-    
-    result = medical_crew.kickoff(inputs={'query': query, 'file_path': file_path})
-    return result
-
-@app.get("/")
-async def root():
-    """Health check endpoint"""
-    return {
-        "status": "running",
-        "message": "Blood Test Report Analyzer API is operational"
-    }
 
 @app.post("/analyze")
 async def analyze_blood_report(
     file: UploadFile = File(...),
-    query: Optional[str] = Form("Summarize my Blood Test Report")
+    query: Optional[str] = Form("Summarize my Blood Test Report"),
+    user_id: Optional[str] = Form(None),
+    db: Session = Depends(get_db)
 ):
-    """Analyze blood test report and provide comprehensive health recommendations"""
-    
     if not file.filename.lower().endswith('.pdf'):
-        raise HTTPException(
-            status_code=400,
-            detail="Only PDF files are accepted"
-        )
+        raise HTTPException(400, "Only PDF files are accepted")
 
     file_id = str(uuid.uuid4())
+    os.makedirs("data", exist_ok=True)
     file_path = f"data/blood_test_report_{file_id}.pdf"
     
     try:
-        os.makedirs("data", exist_ok=True)
-        
         with open(file_path, "wb") as f:
             content = await file.read()
             f.write(content)
-            
-        response = run_crew(
-            query=query.strip(),
-            file_path=file_path
-        )
         
-        return {
-            "status": "success",
-            "query": query,
-            "analysis": str(response),
-            "file_processed": file.filename
-        }
+        task = analyze_report_task.delay(file_path, query, user_id)
+        return JSONResponse({"task_id": task.id})
         
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error processing blood report: {str(e)}"
-        )
-    
-    finally:
-        if os.path.exists(file_path):
-            try:
-                os.remove(file_path)
-            except:
-                pass
+        raise HTTPException(500, f"Error processing request: {str(e)}")
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+@app.get("/results/{task_id}")
+async def get_result(task_id: str, db: Session = Depends(get_db)):
+    task_result = AsyncResult(task_id)
+    
+    if not task_result.ready():
+        return JSONResponse({"status": "processing"})
+    
+    result = task_result.get()
+    
+    if result["status"] == "success":
+        db_result = db.query(AnalysisResult).filter(
+            AnalysisResult.id == result["result_id"]
+        ).first()
+        
+        return {
+            "status": "complete",
+            "result": json.loads(db_result.analysis),
+            "metadata": {
+                "file_name": db_result.file_name,
+                "query": db_result.query,
+                "created_at": db_result.created_at.isoformat()
+            }
+        }
+    else:
+        return JSONResponse(result, status_code=500)
+
+@app.get("/history")
+async def get_history(
+    user_id: str,
+    limit: int = 10,
+    db: Session = Depends(get_db)
+):
+    results = db.query(AnalysisResult).filter(
+        AnalysisResult.user_id == user_id
+    ).order_by(
+        AnalysisResult.created_at.desc()
+    ).limit(limit).all()
+    
+    return [
+        {
+            "id": r.id,
+            "file_name": r.file_name,
+            "query": r.query,
+            "created_at": r.created_at.isoformat()
+        }
+        for r in results
+    ]
