@@ -1,0 +1,27 @@
+{
+  "blood_analysis": {
+    "summary": "Normal CBC with elevated ALaline Phosphatase (150 U/L)",
+    "abnormal_values": [
+      {
+        "test": "ALP",
+        "value": "150 U/L",
+        "range": "30-120 U/L",
+        "interpretation": "Possible liver involvement"
+      }
+    ],
+    "recommendations": [
+      "Follow-up liver function test",
+      "Check vitamin D levels"
+    ]
+  },
+  "nutrition": {
+    "recommendations": [
+      "Increase leafy greens",
+      "Reduce saturated fats"
+    ]
+  },
+  "metadata": {
+    "analyzed_at": "2024-06-25T14:30:00Z",
+    "original_file": "blood_test_report.pdf"
+  }
+}
