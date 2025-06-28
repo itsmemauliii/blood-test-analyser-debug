@@ -165,9 +165,9 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ## 📧 Contact
 
-Project Maintainer - [Your Name](mailto:your.email@example.com)
+Project Maintainer - [Mauli Patel](mailto:maulipatel18112003@gmail.com)
 
-Project Link: [https://github.com/yourusername/blood-test-analyzer](https://github.com/yourusername/blood-test-analyzer)
+Project Link: [https://github.com/itsmemauliii/blood-test-analyser-debug](https://github.com/itsmemauliii/blood-test-analyser-debug)
 
 Key improvements in this README:
 
