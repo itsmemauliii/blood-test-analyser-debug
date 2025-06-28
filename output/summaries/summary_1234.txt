@@ -1,0 +1,17 @@
+=================================
+ BLOOD TEST ANALYSIS REPORT
+=================================
+
+Patient ID: #1234
+Analysis Date: 2024-06-25
+
+KEY FINDINGS:
+- Elevated ALP (150 U/L) - Possible liver involvement
+
+RECOMMENDATIONS:
+1. Follow-up liver function test
+2. Check vitamin D levels
+
+NUTRITION ADVICE:
+- Increase leafy green vegetables
+- Maintain adequate hydration
