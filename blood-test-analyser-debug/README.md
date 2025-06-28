@@ -1,4 +1,3 @@
-```markdown
 # 🩸 Blood Test Analysis System
 
 ![Python](https://img.shields.io/badge/python-3.9+-blue.svg)
@@ -169,7 +168,6 @@ Distributed under the MIT License. See `LICENSE` for more information.
 Project Maintainer - [Your Name](mailto:your.email@example.com)
 
 Project Link: [https://github.com/yourusername/blood-test-analyzer](https://github.com/yourusername/blood-test-analyzer)
-```
 
 Key improvements in this README:
 
